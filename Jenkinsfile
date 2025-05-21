@@ -30,10 +30,14 @@ pipeline {
             }
         }
         
-        stage('Build Docker Image') {
+        // Mengganti tahapan yang membutuhkan Docker dengan persiapan artifacts
+        stage('Prepare Deployment Artifacts') {
             steps {
-                sh 'docker build -t devops-microservice-app:${BUILD_NUMBER} .'
-                sh 'docker tag devops-microservice-app:${BUILD_NUMBER} devops-microservice-app:latest'
+                // Arsipkan file-file yang diperlukan untuk deployment
+                sh 'mkdir -p artifacts'
+                sh 'cp -r src package.json package-lock.json artifacts/'
+                sh 'tar -czf app-artifacts.tar.gz artifacts'
+                archiveArtifacts artifacts: 'app-artifacts.tar.gz', fingerprint: true
             }
         }
         
@@ -42,24 +46,21 @@ pipeline {
                 branch 'development'
             }
             steps {
-                sh '''
-                # Menghentikan container lama jika ada
-                docker stop staging-app || true
-                docker rm staging-app || true
+                // Menggunakan SSH untuk deploy ke server staging
+                echo 'Deploying to staging server...'
+                echo 'Dalam implementasi nyata, gunakan plugin SSH untuk transfer artifacts ke server'
+                echo 'Dan jalankan script deployment di server tersebut'
                 
-                # Menjalankan container baru dengan image terbaru
-                docker run -d --name staging-app -p 3456:3000 devops-microservice-app:latest
+                // Contoh simulasi deployment
+                sh '''
+                echo "Extracting artifacts..."
+                mkdir -p staging
+                tar -xzf app-artifacts.tar.gz -C staging
+                echo "Application deployed to staging environment"
                 '''
                 
                 echo 'Aplikasi berhasil di-deploy ke lingkungan staging'
-                echo 'Staging URL: http://localhost:3456'
-            }
-        }
-        stage('Notify Deployment') {
-            steps {
-                slackSend channel: '#deployments',
-                        color: 'good',
-                        message: "Deployment ke staging berhasil: ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
+                echo 'Staging URL: http://staging-server:3456 (simulasi)'
             }
         }
     }
