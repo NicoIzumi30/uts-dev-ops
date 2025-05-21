@@ -55,6 +55,13 @@ pipeline {
                 echo 'Staging URL: http://localhost:3456'
             }
         }
+        stage('Notify Deployment') {
+            steps {
+                slackSend channel: '#deployments',
+                        color: 'good',
+                        message: "Deployment ke staging berhasil: ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
+            }
+        }
     }
     
     post {
